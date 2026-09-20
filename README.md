@@ -1,6 +1,15 @@
 # kindlespoof
 
-1. create wifi network
+This setup can be used to connect a Kindle to a local [calibre](https://calibre-ebook.com/) content server and add books while offline. It may be especially useful if your Kindle's USB port is broken.
+
+This repository is deliberately not minimal. A Kindle may request different connectivity-check paths depending on its model or firmware. Not all five response files are likely necessary, but I have not determined exactly which subset is required, so all five known paths are included with the same response.
+
+> [!CAUTION]
+> Use this only with devices and networks that you own or are authorized to administer. The example changes DNS resolution, firewall rules, and local network behavior. It is not affiliated with or endorsed by Amazon.
+
+## Setup
+
+1. Create a Wi-Fi network. `tester123` below is only an example password; choose a stronger password if other people are within range.
 
 ```
 nmcli con modify ForKindle 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
@@ -12,11 +21,11 @@ nmcli con show --active
 journalctl -f -u NetworkManager
 ```
 
-2. monitor what the kindle is connecting to
+2. Monitor what the Kindle is connecting to:
 
 `sudo tcpdump -i wlp4s0 -n udp port 53`
 
-3. spoof amazon connections with `/etc/hosts` and an http server
+3. Redirect the Kindle connectivity-check hostnames to the local machine with `/etc/hosts`, then run an HTTP server:
 
 ```
 sudoedit /etc/hosts
@@ -52,7 +61,18 @@ sudo systemctl restart NetworkManager
 sudo python3 -m http.server 80
 ```
 
-Apparently the file devices look for changes; mine definitely looked for wifistub-eink.html and wifiredirect.html.
+Binding to port 80 generally requires elevated privileges. Running Python as root carries risk, so run this only from a directory containing files you intend to serve, stop it when finished, and do not expose it to an untrusted network.
 
-4. unblock UFW for local hotspot traffic with `sudo ufw allow in on wlp4s0`
-5. access calibre content server on `10.42.0.1:8090/mobile` after changing the preferences from 8080.
+The path requested appears to vary between devices or firmware versions. Mine definitely requested `kindle-wifi/wifistub-eink.html` and `kindle-wifi/wifiredirect.html`; the other files are retained for compatibility until their necessity is better understood.
+
+4. Allow local hotspot traffic through UFW with `sudo ufw allow in on wlp4s0`.
+5. Access the calibre content server from the Kindle at `10.42.0.1:8090/mobile` after changing its port from 8080.
+
+## Cleanup
+
+When finished:
+
+1. Stop the HTTP server.
+2. Remove the three entries added to `/etc/hosts`, then restart NetworkManager.
+3. Remove the firewall exception with `sudo ufw delete allow in on wlp4s0`.
+4. Bring down the hotspot with `nmcli con down ForKindle` (and delete the connection if you no longer need it).

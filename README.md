@@ -1,11 +1,12 @@
 # kindlespoof
 
-This setup can be used to connect a Kindle to a local [calibre](https://calibre-ebook.com/) content server and add books while offline. It may be especially useful if your Kindle's USB port is broken.
+This setup can be used to connect a Kindle to a local ebook content server (e.g. [calibre](https://calibre-ebook.com/)'s) and add books while offline. It may be especially useful if your Kindle's USB port is broken.
 
-This repository is deliberately not minimal. A Kindle may request different connectivity-check paths depending on its model or firmware. Not all five response files are likely necessary, but I have not determined exactly which subset is required, so all five known paths are included with the same response.
+All the files in this directory contain only a single line with a code that the Kindle expects when sending requests for verification.
+Not all five files are likely necessary, but I haven't checked which ones are, so all five are included until that happens. The necessity of particular files may depend on the Kindle model.
 
 > [!CAUTION]
-> Use this only with devices and networks that you own or are authorized to administer. The example changes DNS resolution, firewall rules, and local network behavior. It is not affiliated with or endorsed by Amazon.
+> Use this only with devices and networks that you own or are authorized to administer. The example changes Linux system DNS resolution, firewall rules, and local network behavior. It is not affiliated with or endorsed by Amazon.
 
 ## Setup
 
@@ -25,7 +26,7 @@ journalctl -f -u NetworkManager
 
 `sudo tcpdump -i wlp4s0 -n udp port 53`
 
-3. Redirect the Kindle connectivity-check hostnames to the local machine with `/etc/hosts`, then run an HTTP server:
+3. Redirect the Kindle connectivity-check hostnames to the local machine by temporarily editing `/etc/hosts`, then run an HTTP server:
 
 ```
 sudoedit /etc/hosts
